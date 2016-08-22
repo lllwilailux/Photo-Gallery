@@ -1,5 +1,6 @@
 package com.augmentis.ayp.photogallery;
 
+import android.content.pm.LauncherApps;
 import android.net.Uri;
 import android.util.Log;
 
@@ -56,31 +57,42 @@ public class FlickrFetcher {
     }
 
     //
-    private static final String FLICKER_URL = "https://api.flickr.com/services/rest/";
+    private static final String FLICKR_URL = "https://api.flickr.com/services/rest/";
 
     private static final String API_KEY = "e1fa4677f96191d82ba39c9279c6aac4";
 
-    public String fetchItems() throws IOException{
-        String jsonString = null;
+    private static final String METHOD_GET_RECENT = "flickr.photos.getRecent";
+    private static final String METHOD_SEARCH = "flickr.photos.search";
 
-            String url = Uri.parse(FLICKER_URL).buildUpon()
-                    .appendQueryParameter("method","flickr.photos.getRecent")
-                    .appendQueryParameter("api_key",API_KEY)
-                    .appendQueryParameter("format","json")
-                    .appendQueryParameter("nojsoncallback","1")
-                    .appendQueryParameter("extras","url_s")
-                    .build().toString();
+    /**
+     * search photo then put into <b>items</b>
+     *
+     * @param items array target
+     * @param key to search
+     */
+    public void searchPhotos (List<GalleryItem> items ,String key) {
+        try {
+            String url = buildUri(METHOD_SEARCH,key);
+            String jsonStr = queryItem(url);
+            if (jsonStr != null) {
+                parseJSON(items,jsonStr);
+            }
 
-            jsonString = getUrlString(url);
-
-            Log.i(TAG,"Received JSON: "+ jsonString);
-        return jsonString;
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG,"Failed to fetch item",e);
+        }
     }
 
-    public void fetchItems(List<GalleryItem> items ) {
+    /**
+     * get recent photo then put into items
+     *
+     * @param items array target
+     */
+    public void getRecentPhotos (List<GalleryItem> items) {
         try {
-
-        String jsonStr = fetchItems();
+        String url = buildUri(METHOD_GET_RECENT);
+        String jsonStr = queryItem(url);
         if (jsonStr != null) {
                 parseJSON(items,jsonStr);
             }
@@ -91,6 +103,64 @@ public class FlickrFetcher {
         }
     }
 
+    /**
+     * get url
+     *
+     * @param method
+     * @param param
+     * @return url
+     * @throws IOException
+     */
+    private String buildUri(String method, String... param) throws IOException {
+
+        String jsonString = null;
+        Uri baseUrl = Uri.parse(FLICKR_URL);
+        Uri.Builder builder = baseUrl.buildUpon();
+
+//        String url = Uri.parse(FLICKR_URL).buildUpon()
+        builder.appendQueryParameter("method", method);
+        builder.appendQueryParameter("api_key", API_KEY)
+                .appendQueryParameter("format", "json")
+                .appendQueryParameter("nojsoncallback", "1")
+                .appendQueryParameter("extras", "url_s,url_z");
+
+        if (METHOD_SEARCH.equalsIgnoreCase(method)) {
+            builder.appendQueryParameter("text", param[0]);
+        }
+
+
+        Uri completeUrl = builder.build();
+        String url = completeUrl.toString();
+
+        Log.i(TAG, "Run URL: " + url);
+
+        return url;
+    }
+
+    /**
+     * query string url to jsonString
+     *
+     * @param url
+     * @return JSONString
+     * @throws IOException
+     */
+    private String queryItem(String url) throws IOException {
+        Log.i(TAG,"Run URL: "+ url);
+        String jsonString = getUrlString(url);
+
+        Log.i(TAG,"Received JSON: "+ jsonString);
+        return jsonString;
+    }
+
+    /**
+     * parse Json
+     * get photo from photos in jsonBody
+     *
+     * @param newGalleryItemList ArrayList
+     * @param jsonBodyStr String
+     * @throws IOException
+     * @throws JSONException
+     */
     private void parseJSON(List<GalleryItem> newGalleryItemList, String jsonBodyStr) throws IOException,JSONException {
         JSONObject jsonBody = new JSONObject(jsonBodyStr);// convert String to JSON
         JSONObject photosJson = jsonBody.getJSONObject("photos");
@@ -112,6 +182,12 @@ public class FlickrFetcher {
             }
 
             item.setUrl(jsonPhotoIem.getString("url_s"));
+
+            if(!jsonPhotoIem.has("url_z")) {
+                continue;
+            }
+
+            item.setBigSizeUrl(jsonPhotoIem.getString("url_z"));
 
             newGalleryItemList.add(item);
 
