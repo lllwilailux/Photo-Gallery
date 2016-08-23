@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Created by Wilailux on 8/23/2016.
  */
+
+// HandlerThread จะมี Loop อยู่แล้ว มัน extends มาจาก Thread
 public class ThumbnailDownloader<T> extends HandlerThread {
 
     private static final String TAG = "ThumbnailDownloader";
@@ -90,6 +92,7 @@ public class ThumbnailDownloader<T> extends HandlerThread {
             Log.e(TAG, "Error downloading...");
         }
     }
+
     public void queueThumbnailDownload(T target, String url) {
         Log.i(TAG, "Got url: " + url);
 
