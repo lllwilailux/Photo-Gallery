@@ -2,6 +2,7 @@ package com.augmentis.ayp.photogallery;
 
 import android.support.test.filters.SmallTest;
 import android.support.test.runner.AndroidJUnit4;
+import android.util.Log;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,6 +13,7 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.*;
 
 /**
@@ -21,7 +23,9 @@ import static org.junit.Assert.*;
 @SmallTest
 public class FlickrFetcherAndroidTest {
 
+    private static final String TAG = "FTest";
     private FlickrFetcher mFlickrFetcher;
+
     @Before
     public void setUp() throws Exception {
         mFlickrFetcher = new FlickrFetcher();
@@ -32,22 +36,25 @@ public class FlickrFetcherAndroidTest {
         String htmlResult = mFlickrFetcher.getUrlString("https://www.augmentis.biz/");
 
         System.out.println(htmlResult);
-        assertThat(htmlResult,containsString("IT Professional Services"));
-    }
 
-
-    @Test
-    public void testFetch() throws Exception {
-        String json = mFlickrFetcher.fetchItems();
-
-        assertThat(json,containsString("perpage"));
+        assertThat(htmlResult, containsString("IT Professional Services"));
     }
 
     @Test
-    public void testFetchList() throws Exception {
-        List<GalleryItem> galleryItemsList = new ArrayList<>();
-        mFlickrFetcher.fetchItems(galleryItemsList);
+    public void testSearch() throws Exception {
+        List<GalleryItem> galleryItemList = new ArrayList<>();
+        mFlickrFetcher.searchPhotos(galleryItemList, "bird");
 
-        assertThat(galleryItemsList.size(),is(100));
+        Log.d(TAG, "testSearch : size = " + galleryItemList.size());
+        assertThat(galleryItemList.size(), not(0));
+    }
+
+    @Test
+    public void testGetRecent() throws Exception {
+        List<GalleryItem> galleryItemList = new ArrayList<>();
+        mFlickrFetcher.getRecentPhotos(galleryItemList);
+
+        Log.d(TAG, "testGetRecent : size = " + galleryItemList.size());
+        assertThat(galleryItemList.size(), not(0));
     }
 }

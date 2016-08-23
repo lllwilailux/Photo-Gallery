@@ -59,7 +59,7 @@ public class PollService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        Log.i(TAG, "Recieve a call from intent: " + intent);
+        Log.i(TAG, "Receive a call from intent: " + intent);
         if (!isNetworkAvailableAndConnected()) {
             return;
         }
