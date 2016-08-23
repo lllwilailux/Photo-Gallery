@@ -19,20 +19,31 @@ import java.util.List;
  * Created by Wilailux on 8/16/2016.
  */
 public class FlickrFetcher {
+
     private static final String TAG = "FlickrFetcher";
 
+    /**
+     *  Open connection.
+     *  Read and write data from stream.
+     *
+     * @param urlSpec
+     * @return
+     * @throws IOException
+     */
     public byte[] getUrlBytes(String urlSpec) throws IOException {
         URL url = new URL(urlSpec);
 
-        // เชื่อมต่อ url
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            InputStream in = connection.getInputStream();// คือ data ที่ web ส่งมา
+
+            //read data from Stream
+            InputStream in = connection.getInputStream();
 
             //if connection is not OK throw new IOException
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                throw new IOException(connection.getResponseMessage()+ ": with " + urlSpec);
+                throw new IOException(connection.getResponseMessage() + ": with " + urlSpec);
             }
 
             int bytesRead = 0;
@@ -40,7 +51,7 @@ public class FlickrFetcher {
             byte[] buffer = new byte[2048];
 
             while ((bytesRead = in.read(buffer)) > 0) {
-                out.write(buffer,0,bytesRead);
+                out.write(buffer, 0, bytesRead);
             }
 
             out.close();
@@ -51,70 +62,192 @@ public class FlickrFetcher {
         }
     }
 
+    /**
+     * Convert urlByte to string.
+     *
+     * @param urlSpec
+     * @return
+     * @throws IOException
+     */
     public String getUrlString(String urlSpec) throws IOException {
         return new String(getUrlBytes(urlSpec));
     }
 
     //
-    private static final String FLICKER_URL = "https://api.flickr.com/services/rest/";
+    private static final String FLICKR_URL = "https://api.flickr.com/services/rest/";
+    private static final String API_KEY = "73110b7d3d1996b9a8126f98d98e5f6e";
 
-    private static final String API_KEY = "e1fa4677f96191d82ba39c9279c6aac4";
+    private static final String METHOD_GET_RECENT = "flickr.photos.getRecent";
+    private static final String METHOD_SERACH = "flickr.photos.search";
 
-    public String fetchItems() throws IOException{
+//    public String fetchItems() throws IOException {
+//
+//        String jsonString = null;
+//
+//        String url = Uri.parse(FLICKR_URL).buildUpon()
+//                .appendQueryParameter("method", METHOD_GET_RECENT)
+//                .appendQueryParameter("api_key", API_KEY)
+//                .appendQueryParameter("format", "json")
+//                .appendQueryParameter("nojsoncallback", "1")
+//                .appendQueryParameter("extras", "url_s")
+//                .build().toString();
+//
+//        jsonString = getUrlString(url);
+//
+//        Log.i(TAG, "Recent: Recieived JSON: " + jsonString);
+//
+//        return jsonString;
+//    }
+
+//    public String searchItems(String key) throws IOException {
+//
+//        String jsonString = null;
+//        Uri baseUrl = Uri.parse(FLICKR_URL);
+//        Uri.Builder builder = baseUrl.buildUpon();
+//
+////        String url = Uri.parse(FLICKR_URL).buildUpon()
+//        builder.appendQueryParameter("method", METHOD_SERACH);
+//        builder.appendQueryParameter("api_key", API_KEY)
+//                .appendQueryParameter("format", "json")
+//                .appendQueryParameter("nojsoncallback", "1")
+//                .appendQueryParameter("extras", "url_s")
+//                .appendQueryParameter("text", key);
+////                .build().toString();
+//
+//        Uri completeUrl = builder.build();
+//        String url = completeUrl.toString();
+//
+//        Log.i(TAG, "Run URL: " + url);
+//
+//        return url;
+//    }
+
+    /**
+     * Build uri with service from flickr.
+     *
+     * @param method
+     * @param param
+     * @return
+     * @throws IOException
+     */
+    private String buildUri(String method, String... param) throws IOException {
+
         String jsonString = null;
+        Uri baseUrl = Uri.parse(FLICKR_URL);
+        Uri.Builder builder = baseUrl.buildUpon();
 
-            String url = Uri.parse(FLICKER_URL).buildUpon()
-                    .appendQueryParameter("method","flickr.photos.getRecent")
-                    .appendQueryParameter("api_key",API_KEY)
-                    .appendQueryParameter("format","json")
-                    .appendQueryParameter("nojsoncallback","1")
-                    .appendQueryParameter("extras","url_s")
-                    .build().toString();
+//        String url = Uri.parse(FLICKR_URL).buildUpon()
+        builder.appendQueryParameter("method", method);
+        builder.appendQueryParameter("api_key", API_KEY)
+                .appendQueryParameter("format", "json")
+                .appendQueryParameter("nojsoncallback", "1")
+                .appendQueryParameter("extras", "url_s");
 
-            jsonString = getUrlString(url);
+        if (METHOD_SERACH.equalsIgnoreCase(method)) {
+            builder.appendQueryParameter("text", param[0]);
+        }
 
-            Log.i(TAG,"Received JSON: "+ jsonString);
+
+        Uri completeUrl = builder.build();
+        String url = completeUrl.toString();
+
+        Log.i(TAG, "Run URL: " + url);
+
+        return url;
+    }
+
+    /**
+     * Get item from url.
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
+    private String queryItem(String url) throws IOException {
+
+        Log.i(TAG, "Run URL: " + url);
+        String jsonString = getUrlString(url);
+
+        Log.i(TAG, "Search: Recieived JSON: " + jsonString);
+
         return jsonString;
     }
 
-    public void fetchItems(List<GalleryItem> items ) {
-        try {
+//    public void searchPhotos(List<GalleryItem> items, String key) {
+//        searchPhotos(items, key, null);
+//    }
 
-        String jsonStr = fetchItems();
-        if (jsonStr != null) {
-                parseJSON(items,jsonStr);
+    /**
+     * Search photo then put into <b>items</b>
+     *
+     * @param items array target
+     * @param key to search
+     */
+    public void searchPhotos(List<GalleryItem> items, String key) {
+        try {
+            String url = buildUri(METHOD_SERACH, key);
+            String jsonStr = queryItem(url);
+
+            if (jsonStr != null) {
+                parseJSON(items, jsonStr);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e(TAG,"Failed to fetch item",e);
+            Log.e(TAG, "Failed to fetch items ", e);
         }
     }
 
-    private void parseJSON(List<GalleryItem> newGalleryItemList, String jsonBodyStr) throws IOException,JSONException {
-        JSONObject jsonBody = new JSONObject(jsonBodyStr);// convert String to JSON
+    /**
+     * Download photos from url of flickr.
+     *
+     * @param items array target
+     */
+    public void getRecentPhotos(List<GalleryItem> items) {
+        try {
+            String url = buildUri(METHOD_GET_RECENT);
+            String jsonStr = queryItem(url);
+
+            if (jsonStr != null) {
+                parseJSON(items, jsonStr);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, "Failed to fetch items ", e);
+        }
+    }
+
+    /**
+     * Convert JSON object detail to data for add in each item of GalleryItem.
+     *
+     * @param newGalleryItemList List of GalleryItem class
+     * @param jsonBodyStr String that data of JSON object
+     * @throws IOException
+     * @throws JSONException
+     */
+    private void parseJSON(List<GalleryItem> newGalleryItemList, String jsonBodyStr)
+            throws IOException, JSONException {
+
+        JSONObject jsonBody = new JSONObject(jsonBodyStr);
         JSONObject photosJson = jsonBody.getJSONObject("photos");
         JSONArray photoListJson = photosJson.getJSONArray("photo");
 
-//        JSONArray photoListJson = new JSONObject(jsonBodyStr).getJSONObject("photos").getJSONArray("photo"); //เหมือน 3 บันทัดข้างบน
-
         for (int i = 0; i < photoListJson.length(); i++) {
-
-            JSONObject jsonPhotoIem = photoListJson.getJSONObject(i);
+            JSONObject jsonPhotoItem = photoListJson.getJSONObject(i);
 
             GalleryItem item = new GalleryItem();
 
-            item.setId(jsonPhotoIem.getString("id"));
-            item.setTitle(jsonPhotoIem.getString("title"));
+            item.setId(jsonPhotoItem.getString("id"));
+            item.setTitle(jsonPhotoItem.getString("title"));
 
-            if(!jsonPhotoIem.has("url_s")) {
+            if (!jsonPhotoItem.has("url_s")) {
                 continue;
             }
 
-            item.setUrl(jsonPhotoIem.getString("url_s"));
+            item.setUrl(jsonPhotoItem.getString("url_s"));
 
             newGalleryItemList.add(item);
-
         }
     }
 }

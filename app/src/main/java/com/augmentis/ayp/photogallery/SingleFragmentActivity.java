@@ -13,34 +13,35 @@ import android.util.Log;
 public abstract class SingleFragmentActivity extends AppCompatActivity {
     private static final String TAG = "SingleFragmentActivity";
 
-        @LayoutRes
-        protected int getLayoutResId() {
-            return
-                    R.layout.activity_single_fragment;
+    @LayoutRes
+    protected int getLayoutResId() {
+        return R.layout.activity_single_fragment;
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(getLayoutResId());
+
+        Log.d(TAG, "On create activity");
+
+        FragmentManager fm = getSupportFragmentManager();
+        Fragment f = fm.findFragmentById(R.id.fragment_container);
+
+        if( f == null ) {
+            f = onCreateFragment();
+
+            fm.beginTransaction()
+                    .add(R.id.fragment_container, f)
+                    .commit();
+            Log.d(TAG, "Fragment is created");
+        } else {
+            Log.d(TAG, "Fragment have already been created");
+
         }
+    }
 
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setContentView(getLayoutResId());
+    protected abstract Fragment onCreateFragment();
 
-            Log.d(TAG, "On create activity");
-
-            FragmentManager fm = getSupportFragmentManager();
-            Fragment f = fm.findFragmentById(R.id.fragment_container);
-
-            if( f == null ) {
-                f = onCreateFragment();
-
-                fm.beginTransaction()
-                        .add(R.id.fragment_container, f)
-                        .commit();
-                Log.d(TAG, "Fragment is created");
-            } else {
-                Log.d(TAG, "Fragment have already been created");
-
-            }
-        }
-
-        protected abstract Fragment onCreateFragment();
 }
+

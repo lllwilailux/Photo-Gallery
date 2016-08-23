@@ -6,8 +6,8 @@ package com.augmentis.ayp.photogallery;
 public class GalleryItem {
 
     private String mId;
-    public String mTitle;
-    public String mUrl;
+    private String mTitle;
+    private String mUrl;
 
     public void setId(String id) {
         mId = id;
@@ -17,12 +17,12 @@ public class GalleryItem {
         return mId;
     }
 
-    public String getTitle() {
-        return mTitle;
-    }
-
     public void setTitle(String title) {
         mTitle = title;
+    }
+
+    public String getTitle() {
+        return mTitle;
     }
 
     public void setUrl(String url) {
@@ -42,13 +42,14 @@ public class GalleryItem {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof GalleryItem) {
-            //is GalleryIem too
-            GalleryItem that = (GalleryItem) obj;
+    public boolean equals(Object o) {
 
-            return that.mId != null && this.mId != null && that.mId.equals(mId);
+        if (o instanceof GalleryItem) {
+            //is GalleryItem too!
+            GalleryItem that = (GalleryItem) o;
+
+            return that.mId != null && mId != null && that.mId.equals(mId);
         }
-            return false;
+        return false;
     }
 }

@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">PhotoGallery</string>
     <string name="photo_progress_loaded">Photo Progress Loaded</string>
+    <string name="new_picture_arriving">New Picture Arrriving</string>
+    <string name="new_picture_title">New Picture Title</string>
+    <string name="new_picture_content">New Picture Content</string>
+    <string name="search">Search</string>
+    <string name="clear_search">Clear Search</string>
+    <string name="start_polling">Start Polling</string>
+    <string name="stop_polling">Stop Polling</string>
 </resources>
