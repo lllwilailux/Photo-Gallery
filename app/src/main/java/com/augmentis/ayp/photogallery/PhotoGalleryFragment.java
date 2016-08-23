@@ -1,5 +1,6 @@
 package com.augmentis.ayp.photogallery;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -168,10 +169,6 @@ public class PhotoGalleryFragment extends Fragment {
             case R.id.menu_refresh: loadPhoto();
                 return true;
 
-            case R.id.menu_clear_search: mSearchKey = null;
-                loadPhoto();
-                return true;
-
             case R.id.mnu_toggle_polling:
                 Log.d(TAG, "Start intent service");
                 boolean shouldStartAlarm = !PollService.isServiceAlarmOn(getActivity());
@@ -180,6 +177,16 @@ public class PhotoGalleryFragment extends Fragment {
                 Log.d(TAG, (shouldStartAlarm ? " Start " : " Stop ") + " Intent Service ");
                 PollService.setServiceAlarm(getActivity(), shouldStartAlarm);
                 getActivity().invalidateOptionsMenu(); //refresh menu
+                return true;
+
+            case R.id.menu_clear_search:
+                mSearchKey = null;
+                loadPhoto();
+                return true;
+
+            case  R.id.mnu_manual_check:
+                Intent pollIntent = PollService.newIntent(getActivity());
+                getActivity().startService(pollIntent);
                 return true;
         }
         return super.onOptionsItemSelected(item);

@@ -65,6 +65,11 @@ public class PollService extends IntentService {
         }
         Log.i(TAG, "Active network!");
 
+
+//        String query = PhotoGalleryPreference
+//                .mySharedPref(this)
+//                .getString(PhotoGalleryPreference.PREF_SEARCH_KEY,null);
+
         String query = PhotoGalleryPreference.getStoredSearchKey(this);
         String storedId = PhotoGalleryPreference.getStoredLastId(this);
 
@@ -112,6 +117,11 @@ public class PollService extends IntentService {
         PhotoGalleryPreference.setStoredLastId(this, newestId);
     }
 
+    /**
+     * check ว่า มี Network ให้ใช้มั้ย
+     * ต้องสร้าง permission in AndroidManifest ด้วย
+     * @return
+     */
     private boolean isNetworkAvailableAndConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         boolean isActiveNetwork = cm.getActiveNetworkInfo() != null;
