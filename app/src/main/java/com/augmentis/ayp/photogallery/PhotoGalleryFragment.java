@@ -97,6 +97,7 @@ public class PhotoGalleryFragment extends Fragment{
         new FetcherTask().execute();// run another thread
 
         Handler responseUIHandler = new Handler();
+<<<<<<< Updated upstream
 
         ThumbnailDownloader.ThumbnailDownloaderListener<PhotoHolder> listener = new ThumbnailDownloader.ThumbnailDownloaderListener<PhotoHolder>() {
             @Override
@@ -214,6 +215,125 @@ public class PhotoGalleryFragment extends Fragment{
         if (mFetcherTask == null || !mFetcherTask.isRunning()) {
             mFetcherTask = new FetcherTask();
 
+=======
+
+        ThumbnailDownloader.ThumbnailDownloaderListener<PhotoHolder> listener = new ThumbnailDownloader.ThumbnailDownloaderListener<PhotoHolder>() {
+            @Override
+            public void onThumbnailDownloaded(PhotoHolder target, Bitmap thumbnail,String url) {
+
+                if (null == mMemoryCache.get(url)) {
+                    mMemoryCache.put(url,thumbnail);
+                }
+
+                Drawable drawable = new BitmapDrawable(getResources(),thumbnail);
+                target.bindDrawable(drawable);
+            }
+        };
+
+        mThumbnailDownloaderThread = new ThumbnailDownloader<>(responseUIHandler);
+        mThumbnailDownloaderThread.setmThumbnailDownloaderListener(listener);
+        mThumbnailDownloaderThread.start();
+        mThumbnailDownloaderThread.getLooper();
+
+        Log.i(TAG,"Start background thread");
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        mThumbnailDownloaderThread.quit();
+        Log.i(TAG,"Stop background thread");
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mThumbnailDownloaderThread.clearQueue();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        PhotoGalleryPreference.setStoredSearchKey(getActivity(),mSearchKey);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        String searchKey = PhotoGalleryPreference.getStoredSearchKey(getActivity());
+
+        if (searchKey != null) {
+            mSearchKey = searchKey;
+        }
+
+        Log.d(TAG,"OnResume complete");
+    }
+
+    /**
+     * Set Search,reload and clear search menu
+     * @param menu
+     * @param inflater
+     */
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+
+        inflater.inflate(R.menu.menu_main, menu);
+
+        MenuItem menuItem = menu.findItem(R.id.mnu_search);
+        final SearchView searchView = (SearchView) menuItem.getActionView();
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Log.d(TAG,"Query text submitted: " + query);
+                mSearchKey = query;
+                loadPhotos();
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                Log.d(TAG,"Query text changing: " + newText);
+                return false;
+            }
+        });
+
+        searchView.setOnSearchClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                searchView.setQuery(mSearchKey,false);
+            }
+        });
+    }
+
+    /**
+     *
+     * @param item
+     * @return
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.mnu_reload:
+                loadPhotos();
+                return true;
+            case R.id.mnu_clear_search:
+                mSearchKey = null;
+                loadPhotos();
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void loadPhotos() {
+        if (mFetcherTask == null || !mFetcherTask.isRunning()) {
+            mFetcherTask = new FetcherTask();
+
+>>>>>>> Stashed changes
             if (mSearchKey != null) {
                 mFetcherTask.execute(mSearchKey);
             } else {
@@ -309,8 +429,12 @@ public class PhotoGalleryFragment extends Fragment{
                     imgView.setImageDrawable(new BitmapDrawable(getResources(),img));
                 }
 
+<<<<<<< Updated upstream
             };
 
+=======
+            }.execute(mBigUrl);
+>>>>>>> Stashed changes
         }
 
 
@@ -319,108 +443,4 @@ public class PhotoGalleryFragment extends Fragment{
 //        }
     }
 
-    /**
-     * set holder into adapter(RecyclerView)
-     */
-    class PhotoGalleryAdapter extends RecyclerView.Adapter<PhotoHolder> {
-
-        List<GalleryItem> mGalleryItemList;
-
-        PhotoGalleryAdapter(List<GalleryItem> galleryItems) {
-            mGalleryItemList = galleryItems;
-        }
-
-        @Override
-        public PhotoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(getActivity()).inflate(R.layout.item_photo,parent,false);
-            return new PhotoHolder(v);
-        }
-
-        @Override
-        public void onBindViewHolder(PhotoHolder holder, int position) {
-//            holder.bindGalleryItem(mGalleryItemList.get(position));
-            Drawable smileyDrawable = ResourcesCompat.getDrawable(getResources(),R.drawable.bear,null);
-
-            GalleryItem galleryItem = mGalleryItemList.get(position);
-            Log.d(TAG,"bind position # " + position + " , url " + galleryItem.getUrl());
-
-            holder.setBigUrl(galleryItem.getBigSizeUrl());
-            holder.bindDrawable(smileyDrawable);
-
-            if (mMemoryCache.get(galleryItem.getUrl()) != null) {
-                Bitmap bitmap = mMemoryCache.get(galleryItem.getUrl());
-                holder.bindDrawable(new BitmapDrawable(getResources(),bitmap));
-            } else {
-                //
-                mThumbnailDownloaderThread.queueThumbnailDownloader(holder,galleryItem.getUrl());
-            }
-
-            mThumbnailDownloaderThread.queueThumbnailDownloader(holder,galleryItem.getUrl());
-        }
-
-        @Override
-        public int getItemCount() {
-            return mGalleryItemList.size();
-        }
-    }
-
-    /**
-     * AsyncTask คือ Thead ที่ทำงานครั้งเดียวจบ
-     */
-    class FetcherTask extends AsyncTask<String,Void,List<GalleryItem>> {
-
-        boolean running = false;
-
-        @Override
-        protected List<GalleryItem> doInBackground(String... params) {
-            synchronized (this) {
-                running = true;
-            }
-            try {
-
-            Log.d(TAG,"Start Fetcher task ");
-            List<GalleryItem> itemList = new ArrayList<>();
-                FlickrFetcher flickrFetcher = new FlickrFetcher();
-            if (params.length > 0) {
-                flickrFetcher.searchPhotos(itemList,params[0]);
-            } else {
-                flickrFetcher.getRecentPhotos(itemList);
-            }
-
-            Log.d(TAG,"Fetcher task finished");
-            return itemList;
-            } finally {
-                synchronized (this) {
-                    running = false;
-                }
-            }
-        }
-
-        boolean isRunning() {
-            return running;
-        }
-
-//        @Override
-//        protected void onProgressUpdate(Void... values) {
-//            super.onProgressUpdate(values);
-//
-//            String formatString = getResources().getString(R.string.photo_progress_loaded);
-//            Snackbar.make(mRecyclerView,formatString,Snackbar.LENGTH_SHORT).show();
-//        }
-
-        /**
-         *
-         * @param galleryItems
-         */
-        @Override
-        protected void onPostExecute(List<GalleryItem> galleryItems) {
-//                mAdapter = new PhotoGalleryAdapter(galleryItems);
-            mItems = galleryItems;
-            mRecyclerView.setAdapter(new PhotoGalleryAdapter(mItems));
-
-            String formatString = getResources().getString(R.string.photo_progress_loaded);
-            Snackbar.make(mRecyclerView,formatString,Snackbar.LENGTH_SHORT).show();
-
-        }
-    }
 }
