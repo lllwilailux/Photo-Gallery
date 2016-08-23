@@ -75,6 +75,8 @@ public class PhotoGalleryFragment extends Fragment {
         setHasOptionsMenu(true);
         setRetainInstance(true);
 
+        PollJobService.start(getActivity());
+
         Log.d(TAG, "Memory sixe = " + maxMemory + " K ");
 
         mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {

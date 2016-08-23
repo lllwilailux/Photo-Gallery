@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
+import android.os.Build;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.NotificationCompat;
@@ -23,7 +24,7 @@ public class PollService extends IntentService {
 
     private static final String TAG = "PollService";
 
-    private static final int POLL_INTERVAL = 1000*60; //60 sec
+    private static final int POLL_INTERVAL = 1000*1; //1 second
 
     public static Intent newIntent(Context context) {
         return new Intent(context, PollService.class);
@@ -36,21 +37,39 @@ public class PollService extends IntentService {
         AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
 
         if (isOn) {
-            //AlarmManager.RTC -> System.currentTimeMillis();
-            am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME,   //param1: Mode
-                    SystemClock.elapsedRealtime(),                  //param2: Start
-                    POLL_INTERVAL,                                  //param3: Interval
-                    pi);                                            //param4: Pending action(intent)
-        } else {
-            am.cancel(pi); //cancel interval call
-            pi.cancel(); // cancel pending intent call
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+
+                //AlarmManager.RTC -> System.currentTimeMillis();
+                am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,   //param1: Mode
+                        SystemClock.elapsedRealtime(),                  //param2: Start
+                        POLL_INTERVAL,                                  //param3: Interval
+                        pi);                                            //param4: Pending action(intent)
+
+                Log.d(TAG, "Run by alarm manager");
+            } else {
+                PollJobService.start(c);
+                Log.d(TAG, "Run by alarm schedule");
+            }
+
+            } else {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                am.cancel(pi); //cancel interval call
+                pi.cancel(); // cancel pending intent call
+            } else {
+                PollJobService.stop(c);
+            }
         }
     }
 
-    public static boolean isServiceAlarmOn(Context context) {
-        Intent i = PollService.newIntent(context);
-        PendingIntent pi = PendingIntent.getService(context, 0, i, PendingIntent.FLAG_NO_CREATE);
-        return pi != null;
+    public static boolean isServiceAlarmOn(Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            Intent i = PollService.newIntent(ctx);
+            PendingIntent pi = PendingIntent.getService(ctx, 0, i, PendingIntent.FLAG_NO_CREATE);
+            return pi != null;
+        } else {
+            return PollJobService.isRun(ctx);
+        }
     }
 
     public PollService() {
@@ -112,7 +131,9 @@ public class PollService extends IntentService {
 
             // Get notification manager
             NotificationManagerCompat nm = NotificationManagerCompat.from(this);
-            nm.notify(Long.valueOf(newestId).intValue(), notification);       // call notification
+//            nm.notify(Long.valueOf(newestId).intValue(), notification);       // call notification
+            nm.notify(0,notification);
+            new Screen().on(this);
         }
         PhotoGalleryPreference.setStoredLastId(this, newestId);
     }
