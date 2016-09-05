@@ -1,6 +1,7 @@
 package com.augmentis.ayp.photogallery;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.job.JobInfo;
@@ -27,6 +28,9 @@ public class PollJobService extends JobService {
 
     private static final String TAG = "PollJobService";
     private static final int POLL_INTERVAL = 1000*1; //1 second
+    public static final String REQUESTCODE = "REQUES_CODE_INTENT";
+    public static final String NOTIFICATION = "NOTIF";
+
     private PollTask mPollTask;
 
     @Override
@@ -44,9 +48,6 @@ public class PollJobService extends JobService {
 
         return true;
     }
-
-
-    private static final int JOB_ID = 2168;
 
     public static boolean isRun(Context ctx) {
         JobScheduler sch = (JobScheduler) ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
@@ -66,6 +67,7 @@ public class PollJobService extends JobService {
 
     }
 
+    private static final int JOB_ID = 2142;
     public static void start(Context ctx) {
         JobScheduler sch = (JobScheduler) ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
 
@@ -83,65 +85,77 @@ public class PollJobService extends JobService {
 
         @Override
         protected Void doInBackground(JobParameters... params) {
-            // Do Whatever job
 
 
-            Log.d(TAG,"Job poll running");
+            Log.d(TAG, "Job poll running");
+            jobFinished(params[0], false);
 
+            /////
 
-            String query = PhotoGalleryPreference.getStoredSearchKey(PollJobService.this);
-            String storedId = PhotoGalleryPreference.getStoredLastId(PollJobService.this);
+            {
+                String query = PhotoGalleryPreference.getStoredSearchKey(PollJobService.this);
+                String storedId = PhotoGalleryPreference.getStoredLastId(PollJobService.this);
 
-            List<GalleryItem> galleryItemList = new ArrayList<>();
+                List<GalleryItem> galleryItemList = new ArrayList<>();
 
-            FlickrFetcher flickrFetcher = new FlickrFetcher();
-            if(query == null) {
-                flickrFetcher.getRecentPhotos(galleryItemList);
-            } else {
-                flickrFetcher.searchPhotos(galleryItemList, query);
+                FlickrFetcher flickrFetcher = new FlickrFetcher();
+                if(query == null) {
+                    flickrFetcher.getRecentPhotos(galleryItemList);
+                } else {
+                    flickrFetcher.searchPhotos(galleryItemList, query);
+                }
+
+                if (galleryItemList.size() == 0) {
+                    return null;
+                }
+
+                Log.i(TAG, "Found search or te ited");
+
+                String newestId = galleryItemList.get(0).getId(); // fetching first item
+
+                if (newestId.equals(storedId)) {
+                    Log.i(TAG, "No new item");
+
+                } else {
+                    Log.i(TAG, "New item found");
+
+                    Resources res = getResources();
+                    Intent i = PhotoGalleryActivity.newIntent(PollJobService.this);
+                    PendingIntent pi = PendingIntent.getActivity(PollJobService.this, 0, i, 0);
+
+                    //Build to build notification object
+                    android.support.v4.app.NotificationCompat.Builder notiBuilder = new android.support.v4.app.NotificationCompat.Builder(PollJobService.this);
+                    notiBuilder.setTicker(res.getString(R.string.new_picture_arriving));
+                    notiBuilder.setSmallIcon(android.R.drawable.ic_menu_report_image);
+                    notiBuilder.setContentTitle(res.getString(R.string.new_picture_title));
+                    notiBuilder.setContentText(res.getString(R.string.new_picture_content));
+                    notiBuilder.setContentIntent(pi);
+                    notiBuilder.setAutoCancel(true); //if it already have it not appear
+
+                    Notification notification = notiBuilder.build(); // << Build notification from builder
+                    sendBackgroundNotification(0, notification);
+//
+                }
+                PhotoGalleryPreference.setStoredLastId(PollJobService.this, newestId);
             }
 
-            if (galleryItemList.size() == 0) {
-                return null;
-            }
+            /////
 
-            Log.i(TAG, "Found search or te ited");
-
-            String newestId = galleryItemList.get(0).getId(); // fetching first item
-
-            if (newestId.equals(storedId)) {
-                Log.i(TAG, "No new item");
-            } else {
-                Log.i(TAG, "New item found");
-
-                Resources res = getResources();
-                Intent i = PhotoGalleryActivity.newIntent(PollJobService.this);
-                PendingIntent pi = PendingIntent.getActivity(PollJobService.this, 0, i, 0);
-
-                //Build to build notification object
-                NotificationCompat.Builder notiBuilder = new NotificationCompat.Builder(PollJobService.this);
-                notiBuilder.setTicker(res.getString(R.string.new_picture_arriving));
-                notiBuilder.setSmallIcon(android.R.drawable.ic_menu_report_image);
-                notiBuilder.setContentTitle(res.getString(R.string.new_picture_title));
-                notiBuilder.setContentText(res.getString(R.string.new_picture_content));
-                notiBuilder.setContentIntent(pi);
-                notiBuilder.setAutoCancel(true);
-
-                Notification notification = notiBuilder.build(); // Build notification from builder
-
-                // Get notification manager
-                NotificationManagerCompat nm = NotificationManagerCompat.from(PollJobService.this);
-                nm.notify(0, notification);       // call notification
-
-
-                new Screen().on(PollJobService.this);
-
-            }
-            PhotoGalleryPreference.setStoredLastId(PollJobService.this, newestId);
-
-            // Finish
-            jobFinished(params[0],false);
             return null;
+        }
+
+
+        private void sendBackgroundNotification(int requestCode, Notification notification){
+
+            Intent intent = new Intent(PollService.ACTION_SHOW_NOTIFICATION);
+            intent.putExtra(REQUESTCODE, requestCode);
+            intent.putExtra(NOTIFICATION, notification);
+
+            sendOrderedBroadcast(intent, PollService.PERMISSION_SHOW_NOTIF,
+                    null, null,
+                    Activity.RESULT_OK,
+                    null, null);
+
         }
     }
 }

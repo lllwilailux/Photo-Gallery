@@ -18,9 +18,7 @@ import java.util.List;
 /**
  * Created by Wilailux on 8/16/2016.
  */
-public class FlickrFetcher {
-
-    private static final String TAG = "FlickrFetcher";
+public class FlickrFetcher { private static final String TAG = "FlickrFetcher";
 
     /**
      *  Open connection.
@@ -122,15 +120,7 @@ public class FlickrFetcher {
 //        return url;
 //    }
 
-    /**
-     * Build uri with service from flickr.
-     *
-     * @param method
-     * @param param
-     * @return
-     * @throws IOException
-     */
-    private String buildUri(String method, String... param) throws IOException {
+    private String buildUrl(String method, String... param) throws IOException {
 
         String jsonString = null;
         Uri baseUrl = Uri.parse(FLICKR_URL);
@@ -141,12 +131,18 @@ public class FlickrFetcher {
         builder.appendQueryParameter("api_key", API_KEY)
                 .appendQueryParameter("format", "json")
                 .appendQueryParameter("nojsoncallback", "1")
-                .appendQueryParameter("extras", "url_s");
+                .appendQueryParameter("extras", "url_s , url_o");
 
         if (METHOD_SERACH.equalsIgnoreCase(method)) {
             builder.appendQueryParameter("text", param[0]);
         }
 
+        if(param.length > 1){
+            //Latitude * Longitude Added
+
+            builder.appendQueryParameter("lat", param[1] );
+            builder.appendQueryParameter("lon", param[2] );
+        }
 
         Uri completeUrl = builder.build();
         String url = completeUrl.toString();
@@ -156,13 +152,6 @@ public class FlickrFetcher {
         return url;
     }
 
-    /**
-     * Get item from url.
-     *
-     * @param url
-     * @return
-     * @throws IOException
-     */
     private String queryItem(String url) throws IOException {
 
         Log.i(TAG, "Run URL: " + url);
@@ -173,24 +162,23 @@ public class FlickrFetcher {
         return jsonString;
     }
 
-//    public void searchPhotos(List<GalleryItem> items, String key) {
-//        searchPhotos(items, key, null);
-//    }
+    public void searchPhotos(List<GalleryItem> items, String key,String lat, String lon) {
+        try {
+            String url = buildUrl(METHOD_SERACH, key, lat, lon);
 
-    /**
-     * Search photo then put into <b>items</b>
-     *
-     * @param items array target
-     * @param key to search
-     */
+            fetchPhoto(items, url);
+
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+            Log.e(TAG, "Failed to fetch items ", e);
+        }
+    }
+
     public void searchPhotos(List<GalleryItem> items, String key) {
         try {
-            String url = buildUri(METHOD_SERACH, key);
-            String jsonStr = queryItem(url);
-
-            if (jsonStr != null) {
-                parseJSON(items, jsonStr);
-            }
+            String url = buildUrl(METHOD_SERACH, key );
+            fetchPhoto(items, url);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -198,23 +186,23 @@ public class FlickrFetcher {
         }
     }
 
-    /**
-     * Download photos from url of flickr.
-     *
-     * @param items array target
-     */
     public void getRecentPhotos(List<GalleryItem> items) {
-        try {
-            String url = buildUri(METHOD_GET_RECENT);
-            String jsonStr = queryItem(url);
 
-            if (jsonStr != null) {
-                parseJSON(items, jsonStr);
-            }
+        try {
+            String url = buildUrl(METHOD_GET_RECENT);
+            fetchPhoto(items, url);
 
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "Failed to fetch items ", e);
+        }
+    }
+
+    public void fetchPhoto(List<GalleryItem> items, String url) throws IOException, JSONException{
+        String jsonStr = queryItem(url);
+
+        if (jsonStr != null) {
+            parseJSON(items, jsonStr);
         }
     }
 
@@ -240,14 +228,21 @@ public class FlickrFetcher {
 
             item.setId(jsonPhotoItem.getString("id"));
             item.setTitle(jsonPhotoItem.getString("title"));
+            item.setOwner(jsonPhotoItem.getString("owner"));
 
             if (!jsonPhotoItem.has("url_s")) {
                 continue;
             }
-
             item.setUrl(jsonPhotoItem.getString("url_s"));
+
+            if(!jsonPhotoItem.has("url_o")){
+                continue;
+            }
+
+            item.setmBigSizeUrl(jsonPhotoItem.getString("url_o"));
 
             newGalleryItemList.add(item);
         }
     }
+
 }

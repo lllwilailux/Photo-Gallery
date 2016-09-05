@@ -1,12 +1,22 @@
 <resources>
     <string name="app_name">PhotoGallery</string>
     <string name="photo_progress_loaded">Photo Progress Loaded</string>
-    <string name="new_picture_arriving">New Picture Arrriving</string>
-    <string name="new_picture_title">New Picture Title</string>
-    <string name="new_picture_content">New Picture Content</string>
+    <string name="new_picture_arriving">New Picture Arriving</string>
+    <string name="new_picture_title">New Picture is here!Title</string>
+    <string name="new_picture_content">New Picture for your app has been arriving!</string>
     <string name="search">Search</string>
     <string name="clear_search">Clear Search</string>
     <string name="start_polling">Start Polling</string>
     <string name="stop_polling">Stop Polling</string>
     <string name="manual_check">Manual Check</string>
+    <string name="photo_setting">Setting</string>
+    <string name="in_app_browser">In-app browser</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="alarm_clock">Alarm Clock</string>
+    <string name="open_with_external_browser">Open with external browser</string>
+    <string name="open_in_app_browser">Open in-app browser</string>
+
+
+    <string name="use_gps_setting">Use GPS when searching</string>
+
 </resources>
