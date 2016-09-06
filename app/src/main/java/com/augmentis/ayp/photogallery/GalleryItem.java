@@ -12,6 +12,8 @@ public class GalleryItem {
     private String mUrl;
     private String mOwner;
     private String mBigSizeUrl;
+    private String mLat;
+    private String mLon;
 
     public void setId(String id) {
         mId = id;
@@ -45,6 +47,22 @@ public class GalleryItem {
         setTitle(name);
     }
 
+    public String getLat() {
+        return mLat;
+    }
+
+    public void setLat(String mLat) {
+        this.mLat = mLat;
+    }
+
+    public String getLon() {
+        return mLon;
+    }
+
+    public void setLon(String mLon) {
+        this.mLon = mLon;
+    }
+
     @Override
     public boolean equals(Object o) {
 
@@ -61,15 +79,15 @@ public class GalleryItem {
         this.mOwner = owner;
     }
 
-    public String getmOwner() {
+    public String getOwner() {
         return mOwner;
     }
 
-    public void setmBigSizeUrl(String mBigSizeUrl) {
+    public void setBigSizeUrl(String mBigSizeUrl) {
         this.mBigSizeUrl = mBigSizeUrl;
     }
 
-    public String getmBigSizeUrl() {
+    public String getBigSizeUrl() {
         return mBigSizeUrl;
     }
 
@@ -81,5 +99,9 @@ public class GalleryItem {
                 .appendPath(mOwner)
                 .appendPath(mId)
                 .build(); // Return Uri
+    }
+
+    public boolean isGeoCorrect() {
+        return !("0".equals(mLat) && "0".equals(mLon));
     }
 }

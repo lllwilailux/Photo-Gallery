@@ -7,7 +7,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -131,7 +130,7 @@ public class FlickrFetcher { private static final String TAG = "FlickrFetcher";
         builder.appendQueryParameter("api_key", API_KEY)
                 .appendQueryParameter("format", "json")
                 .appendQueryParameter("nojsoncallback", "1")
-                .appendQueryParameter("extras", "url_s , url_o");
+                .appendQueryParameter("extras", "url_s , url_z , geo");
 
         if (METHOD_SERACH.equalsIgnoreCase(method)) {
             builder.appendQueryParameter("text", param[0]);
@@ -235,11 +234,13 @@ public class FlickrFetcher { private static final String TAG = "FlickrFetcher";
             }
             item.setUrl(jsonPhotoItem.getString("url_s"));
 
-            if(!jsonPhotoItem.has("url_o")){
+            item.setLat(jsonPhotoItem.getString("latitude"));
+            item.setLon(jsonPhotoItem.getString("longitude"));
+
+            if(!jsonPhotoItem.has("url_z")){
                 continue;
             }
-
-            item.setmBigSizeUrl(jsonPhotoItem.getString("url_o"));
+            item.setBigSizeUrl(jsonPhotoItem.getString("url_z"));
 
             newGalleryItemList.add(item);
         }
