@@ -84,8 +84,7 @@ public class PhotoGalleryFragment extends Fragment {
     final int cacheSize = maxMemory / 8;
 
     @SuppressWarnings("all")
-    private GoogleApiClient.ConnectionCallbacks mConnectionCallbacks =
-            new GoogleApiClient.ConnectionCallbacks() {
+    private GoogleApiClient.ConnectionCallbacks mConnectionCallbacks = new GoogleApiClient.ConnectionCallbacks() {
                 @Override
                 public void onConnected(@Nullable Bundle bundle) {
                     Log.i(TAG,"Google API connected");
